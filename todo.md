@@ -1,0 +1,5 @@
+- Find <i></i> tags
+- Calculate file path with fas, fab, fal
+- Add source files to svg directory
+- Convert CSS from font to image/svg
+- insert svg directly into html

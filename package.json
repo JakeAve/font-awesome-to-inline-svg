@@ -1,0 +1,11 @@
+{
+  "name": "font-awersome-svg",
+  "version": "1.0.0",
+  "description": "Find and replace font-awesome with raw svgs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jacob Avery",
+  "license": "ISC"
+}
