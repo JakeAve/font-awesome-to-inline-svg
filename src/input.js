@@ -7,29 +7,66 @@ const input = {
     fontAwesomeDesktopRoot: "../fontawesome-free-5.9.0-desktop",
     fontAwesomeWebRoot: "",
     svgFolder: "",
-    insertSvg: ""
+    insertSvgTag: true,
+    htmlOutput: ['../output/something.html']
 }
 
 const htmlFiles = input.htmlFiles;
 const fontAwesomeDesktopRoot = input.fontAwesomeDesktopRoot;
+const insertSvgTag = input.insertSvgTag;
+const svgFolder = input.svgFolder;
 
-htmlFiles.forEach(f => fs.readFile(f, 'utf8', (err, data) => {
-    if (err)
-        console.log(err);
-    else {
-        const matches = [...data.matchAll(/<i.*"(fa[bdlrs])\sfa-(.*)".*<\/i>/g)];
-        // console.log(matches[0]);
-        const fullPath = makeFullPath(fontAwesomeDesktopRoot);
-        matches.forEach(m => {
-            const folder = fullPath;
-            const prefix = m[1];
-            const name = m[2];
-            const newPath = findSVG(folder, prefix, name);
-            const data = fs.readFileSync(newPath, 'utf8');
-            console.log(data);
+function findIconsInHTML(HTMLData) {
+    const matches = [...HTMLData.matchAll(/<i.*"(fa[bdlrs])\sfa-(.*)".*<\/i>/g)];
+    const fullPath = makeFullPath(fontAwesomeDesktopRoot);
+    const icons = matches.map((m, i) => {
+        const folder = fullPath;
+        const svgPath = findSVG(folder, m[1], m[2]);
+        const dataPromise = new Promise((resolve, reject) => {
+            fs.readFile(svgPath, 'utf8', (err, data) => {
+                if (err)
+                    reject(err);
+                else resolve(data);
+            });
+        })
+            .then(res => {
+                icons[i].data = res;
+            })
+            .catch(err => console.log(err));
+        return { ...m, folder, svgPath, dataPromise }
+    })
+    const promises = icons.map(icon => icon.dataPromise);
+    return Promise.all(promises).then(() => icons).catch(err => console.log(err));
+}
+
+function readHTMLFiles() {
+    htmlFiles.forEach(f => fs.readFile(f, 'utf8', async (err, data) => {
+        if (err)
+            console.log(err);
+        else {
+            const icons = await findIconsInHTML(data);
+            findAndReplace(icons, {insertSvgTag, svgFolder})
+        }
+    }))
+}
+
+readHTMLFiles();
+
+function findAndReplace(icons, {insertSvgTag, svgsFolder}) {
+    let htmlData = icons[0].input;
+    if (insertSvgTag) {
+        icons.forEach(icon => {
+            htmlData = htmlData.replace(icon[0], icon.data);
         })
     }
-}))
+    // console.log(htmlData);
+    fs.mkdir(path.dirname(input.htmlOutput[0]), {recursive: true}, err => {
+        if (err) console.log(err)
+        fs.writeFile(input.htmlOutput[0], htmlData, (err) => {
+            if (err) console.log(err);
+        })
+    })
+}
 
 function makeFullPath(root) {
     const svgsFolder = path.join(root, "/fontawesome-free-5.9.0-desktop/svgs");
@@ -55,9 +92,8 @@ function findSVG(folder, prefix, name) {
             subFolder = "brands";
             break;
         default:
-            console.log("error, you idiot");
+            console.error('Error');
     }
     const svgPath = path.join(folder, subFolder, `${name}.svg`);
     return svgPath;
 }
-
