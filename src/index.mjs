@@ -2,20 +2,19 @@ import path from "path";
 import fs from "fs";
 import input from "./input.mjs";
 
-// const path = require('path');
-// const fs = require('fs');
-// const input = require('./input');
+const __dirname = path.resolve();
+process.chdir(__dirname);
 
 // const htmlFiles = input.htmlFiles;
 // const fontAwesomeDesktopRoot = input.fontAwesomeDesktopRoot;
 // const insertSvgTag = input.insertSvgTag;
 // const svgFolder = input.svgFolder;
 
-const { htmlFiles, fontAwesomeDesktopRoot, insertSvgTag } = input;
+const { htmlFiles, fontAwesomeDesktopRoot, fontAwesomeWebRoot, insertSvgTag } = input;
 
 function findIconsInHTML(HTMLData) {
     const matches = [...HTMLData.matchAll(/<i.*"(fa[bdlrs])\sfa-(.*)".*<\/i>/g)];
-    const svgsFolder = path.join(fontAwesomeDesktopRoot, "/fontawesome-free-5.9.0-desktop/svgs");
+    const svgsFolder = fontAwesomeDesktopRoot ? path.join(fontAwesomeDesktopRoot, "/fontawesome-free-5.9.0-desktop/svgs") : path.join(fontAwesomeWebRoot, "/fontawesome-free-5.9.0-web/svgs");
     const icons = matches.map((m, i) => {
         const fullSvgPath = makeFullFAPath(svgsFolder, m[1], m[2]);
         const dataPromise = new Promise((resolve, reject) => {
@@ -28,7 +27,7 @@ function findIconsInHTML(HTMLData) {
             .then(res => {
                 icons[i].data = res;
             })
-            .catch(err => console.log(err));
+            .catch(err => console.error(err));
         return { ...m, fullSvgPath, dataPromise }
     })
     const promises = icons.map(icon => icon.dataPromise);
@@ -38,7 +37,7 @@ function findIconsInHTML(HTMLData) {
 function readHTMLFiles() {
     htmlFiles.forEach(f => fs.readFile(f, 'utf8', async (err, data) => {
         if (err)
-            console.log(err);
+            console.error(err);
         else {
             const icons = await findIconsInHTML(data);
             findAndReplace(icons, { insertSvgTag })
@@ -56,9 +55,9 @@ function findAndReplace(icons, { insertSvgTag }) {
         })
     }
     fs.mkdir(path.dirname(input.htmlOutput[0]), { recursive: true }, (err) => {
-        if (err) console.log(err)
+        if (err) console.error(err)
         fs.writeFile(input.htmlOutput[0], htmlData, (err) => {
-            if (err) console.log(err);
+            if (err) console.error(err);
         })
     })
 }

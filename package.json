@@ -1,10 +1,10 @@
 {
-  "name": "font-awersome-svg",
+  "name": "fa-svg-inline",
   "version": "1.0.0",
-  "description": "Find and replace font-awesome with raw svgs",
+  "description": "Find and replace FontAwesome with raw svgs",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "node --experimental-modules ./src/index.mjs"
   },
   "author": "Jacob Avery",
   "license": "ISC"
